@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Color Catch - Day 10</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    #gameArea {
+      width: 1000px;
+      height: 800px;
+      border: 2px solid #333;
+      position: relative;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+    .ball {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      position: absolute;
+      transition: all 0.1s;
+    }
+    @keyframes clickEffect {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    .ball.clicked {
+      animation: clickEffect 0.2s;
+    }
+    #score, #timer {
+      font-size: 24px;
+      margin: 10px;
+    }
+    #replay {
+      display: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">スコア: 0</div>
+  <div id="timer">残り時間: 30</div>
+  <div id="gameArea"></div>
+  <button id="replay">もう一度プレイ</button>
+  <audio id="clickSound" src="click.mp3"></audio>
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const replayButton = document.getElementById('replay');
+    const clickSound = document.getElementById('clickSound');
+    let score = 0;
+    let timeLeft = 30;
+    let gameActive = true;
+
+    // ボール生成
+    function createBall() {
+      if (!gameActive) return;
+      const ball = document.createElement('div');
+      ball.classList.add('ball');
+      const colors = [
+        { color: 'red', points: 10 },
+        { color: 'blue', points: 5 },
+        { color: 'black', points: -5 }
+      ];
+      const { color, points } = colors[Math.floor(Math.random() * colors.length)];
+      ball.style.backgroundColor = color;
+      ball.dataset.points = points;
+      ball.style.left = Math.random() * (gameArea.offsetWidth - 35) + 'px';
+      ball.style.top = Math.random() * (gameArea.offsetHeight - 35) + 'px';
+      gameArea.appendChild(ball);
+
+      // ボールの動き
+      let dx = (Math.random() - 0.5) * 8;
+      let dy = (Math.random() - 0.5) * 8;
+      function moveBall() {
+        if (!gameActive) return;
+        let x = parseFloat(ball.style.left);
+        let y = parseFloat(ball.style.top);
+        if (x <= 0 || x >= gameArea.offsetWidth - 35) dx = -dx;
+        if (y <= 0 || y >= gameArea.offsetHeight - 35) dy = -dy;
+        ball.style.left = (x + dx) + 'px';
+        ball.style.top = (y + dy) + 'px';
+        requestAnimationFrame(moveBall);
+      }
+      moveBall();
+
+      // クリックイベント
+      ball.addEventListener('click', () => {
+        score += parseInt(ball.dataset.points);
+        scoreDisplay.textContent = `スコア: ${score}`;
+        clickSound.play();
+        ball.classList.add('clicked');
+        setTimeout(() => {
+          ball.remove();
+        }, 200); // アニメーションの時間（0.2秒）後に削除
+      });
+
+      setTimeout(() => ball.remove(), 3000); // 3秒後に自動消滅
+    }
+
+    // ゲームループ
+    setInterval(createBall, 1000); // 1秒ごとにボール生成
+    const timer = setInterval(() => {
+      timeLeft--;
+      timerDisplay.textContent = `残り時間: ${timeLeft}`;
+      if (timeLeft <= 0) {
+        gameActive = false;
+        clearInterval(timer);
+        gameArea.innerHTML = '';
+        replayButton.style.display = 'block';
+        alert(`ゲーム終了！ 最終スコア: ${score}`);
+      }
+    }, 1000);
+
+    // リプレイ
+    replayButton.addEventListener('click', () => {
+      score = 0;
+      timeLeft = 30;
+      gameActive = true;
+      scoreDisplay.textContent = `スコア: ${score}`;
+      timerDisplay.textContent = `残り時間: ${timeLeft}`;
+      replayButton.style.display = 'none';
+      setInterval(createBall, 1000);
+    });
+  </script>
+</body>
+</html>
